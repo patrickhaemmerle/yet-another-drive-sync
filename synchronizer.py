@@ -20,10 +20,10 @@ class Synchronizer:
     def synchronize(self):
         list1 = self._getFileList(self._root1)
         list2 = self._getFileList(self._root2)
-        self._copyMisingFiles(list1, list2, self._root1, self._root2)
-        self._copyMisingFiles(list2, list1, self._root2, self._root1)
+        self._copyMissingFiles(list1, list2, self._root1, self._root2)
+        self._copyMissingFiles(list2, list1, self._root2, self._root1)
 
-    def _copyMisingFiles(self, list1, list2, fromRoot, toRoot):
+    def _copyMissingFiles(self, list1, list2, fromRoot, toRoot):
         for path in list1:
             if list2.get(path) == None:
                 self._copyFile(path, fromRoot, toRoot)
