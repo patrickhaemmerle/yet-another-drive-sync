@@ -117,3 +117,15 @@ class TestSynchronizer(TestCase):
         self.getSynchronizer().synchronize()
         self.check('fixtures/newFolderInRoot2')
         self.assertTrue(os.path.isdir('test/newFolderInRoot2/root1/newFolder'))
+
+    # TODO Use cases to be implemented
+    #  - A file changes on one side
+    #  - A file changes on both sides (conflict resolution)
+    #  - A file is deleted on one side
+    #  - A folder is deleted on one side
+    #  - A file is deleted on both sides
+    #  - A folder is deleted on both sides
+    #  - Block, if watermark for too many deletes is exceeded
+    #  - Run tests against google drive
+    #  - How to handle Google Docs files?
+    #  - How to handle Links in google drive?
