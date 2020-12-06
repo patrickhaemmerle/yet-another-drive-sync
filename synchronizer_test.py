@@ -1,6 +1,7 @@
 import os
 import shutil
 import subprocess
+import unittest
 from unittest import TestCase
 
 from synchronizer import Synchronizer
@@ -15,8 +16,8 @@ class TestSynchronizer(TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         shutil.rmtree('test', ignore_errors=True, onerror=None)
-        os.makedirs('test/root1')
-        os.makedirs('test/root2')
+        os.makedirs(TestSynchronizer.getRoot1())
+        os.makedirs(TestSynchronizer.getRoot2())
 
     @staticmethod
     def getRoot1():
@@ -26,10 +27,12 @@ class TestSynchronizer(TestCase):
     def getRoot2():
         return 'test/root2'
 
-    @staticmethod
-    def createTextFile(root, path, content):
-        with open(root + '/' + path, 'w') as f:
+    def createTextFile(self, root, path, content):
+        with open(f'{root}/{path}', 'w') as f:
             f.write(content)
+
+    def createFolder(self, root, path):
+        os.mkdir(f'{root}/{path}')
 
     def getSynchronizer(self):
         return Synchronizer(self.getRoot1(), self.getRoot2(), self._rcloneCommand)
@@ -46,11 +49,23 @@ class TestSynchronizer(TestCase):
         self.assertEqual(subprocess.call([self._rcloneCommand, 'sync', fixture + '/root2/', self.getRoot2()]), 0)
 
     def testIsSyncedTrue(self):
+        """If everything is in sync isSynced() returns true"""
         self.prepareRoots('fixtures/isSynced/synced')
         self.assertTrue(self.getSynchronizer().isSynced())
 
-    def testIsSyncedFalse(self):
+    def testUnsyncedFile(self):
+        """If there is an unsynced file isSynced() returns false"""
         self.prepareRoots('fixtures/isSynced/notSynced')
+        self.assertFalse(self.getSynchronizer().isSynced())
+
+    @unittest.skip("Not directly supported by rclone, but we can live with that limitation for now")
+    def testUnsyncedEmptyFolder(self):
+        """If there is an unsynced empty folder isSynced() returns false"""
+        try:
+            os.makedirs('ixtures/isSynced/notSyncedEmptyFolder/root2/newFolder')
+        except(FileExistsError):
+            pass
+        self.prepareRoots('fixtures/isSynced/notSyncedEmptyFolder')
         self.assertFalse(self.getSynchronizer().isSynced())
 
     def testNewFileInRoot1(self):
@@ -66,3 +81,39 @@ class TestSynchronizer(TestCase):
         self.createTextFile(self.getRoot2(), 'newFile.txt', 'newFile')
         self.getSynchronizer().synchronize()
         self.check('fixtures/newFileInRoot2')
+
+    @unittest.skip("Not directly supported by rclone, but we can live with that limitation for now")
+    def testNewFolderInRoot1(self):
+        """If there is an empty folder in root1, it should be synchronized"""
+        try:
+            os.makedirs('fixtures/newFolderInRoot1/root1/newFolder')
+        except(FileExistsError):
+            pass
+        try:
+            os.makedirs('fixtures/newFolderInRoot1/expected/newFolder')
+        except(FileExistsError):
+            pass
+        self.prepareRoots(('fixtures/newFolderInRoot1'))
+        self.getSynchronizer().synchronize()
+        self.createFolder(self.getRoot1(), 'newFolder')
+        self.getSynchronizer().synchronize()
+        self.check('fixtures/newFolderInRoot1')
+        self.assertTrue(os.path.isdir('test/newFolderInRoot1/root2/newFolder'))
+
+    @unittest.skip("Not directly supported by rclone, but we can live with that limitation for now")
+    def testNewFolderInRoot2(self):
+        """If there is an empty folder in root1, it should be synchronized"""
+        try:
+            os.makedirs('fixtures/newFolderInRoot2/root2/newFolder')
+        except(FileExistsError):
+            pass
+        try:
+            os.makedirs('fixtures/newFolderInRoot2/expected/newFolder')
+        except(FileExistsError):
+            pass
+        self.prepareRoots(('fixtures/newFolderInRoot2'))
+        self.getSynchronizer().synchronize()
+        self.createFolder(self.getRoot2(), 'newFolder')
+        self.getSynchronizer().synchronize()
+        self.check('fixtures/newFolderInRoot2')
+        self.assertTrue(os.path.isdir('test/newFolderInRoot2/root1/newFolder'))
